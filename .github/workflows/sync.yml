@@ -1,0 +1,27 @@
+name: 同步机场清单
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 下载最新清单
+        run: |
+          curl -fsSL --retry 3 https://airpoty.co/github-readme.md -o README.new
+          grep -q '在架机场一览' README.new
+          mv README.new README.md
+      - name: 有变化时提交
+        run: |
+          if git diff --quiet; then echo "清单无变化"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "更新机场清单 $(date -u +%F)"
+          git push
